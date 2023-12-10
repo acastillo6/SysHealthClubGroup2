@@ -30,7 +30,7 @@ public class HealthClubAccountApp extends JFrame {
     private JTextField membershipTypeField;
 
 
-    public HealthClubAccountApp(Connection con) {
+    public HealthClubAccountApp() {
         setTitle("Health Club Account Creation");
         setSize(600, 400);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -79,19 +79,32 @@ public class HealthClubAccountApp extends JFrame {
         membershipTypeField = new JTextField();
         mainPanel.add(membershipTypeField);
 
-        JButton createAccountButton = new JButton("Create Account");
-        createAccountButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                createAccount(con);
-            }
-        });
+        String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
+        String username = "nczap";
+        String password = "group2healthclub";
 
-        mainPanel.add(createAccountButton);
+        try {
+            Class.forName("software.aws.rds.jdbc.mysql.Driver");
 
-        add(mainPanel);
+            Connection con = DriverManager.getConnection(url, username, password);
 
-        setVisible(true);
+            JButton createAccountButton = new JButton("Create Account");
+            createAccountButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    createAccount(con);
+                }
+            });
+
+            mainPanel.add(createAccountButton);
+
+            add(mainPanel);
+
+            setVisible(true);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void createAccount(Connection con) {
@@ -175,8 +188,7 @@ public class HealthClubAccountApp extends JFrame {
         }
         int newID;
         while(true){
-            newID = random.nextInt();
-            System.out.println("Trying id value of " + newID);
+            newID = random.nextInt(Integer.MAX_VALUE);
             boolean unique = true;
             for(int id: memberIDs){
                 if(newID == id){
@@ -187,7 +199,7 @@ public class HealthClubAccountApp extends JFrame {
             if(unique)
                 break;
         }
-        System.out.println(newID + " is a unique ID!");
+        System.out.println("Your ID number is: " + newID);
         return newID;
     }
 
@@ -202,11 +214,6 @@ public class HealthClubAccountApp extends JFrame {
             memberIDsList.add(memberIDsRS.getInt("member_id"));
         }
 
-        for(int id: memberIDsList)
-            System.out.print(id + " ");
-
-        System.out.println("\n");
-
         return memberIDsList;
 
     }
@@ -215,17 +222,18 @@ public class HealthClubAccountApp extends JFrame {
         String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
         String username = "nczap";
         String password = "group2healthclub";
-        try (
-                Connection con = DriverManager.getConnection(url, username, password);
-                ) {
+        try {
+            Class.forName("software.aws.rds.jdbc.mysql.Driver");
 
-            SwingUtilities.invokeLater(new Runnable() {
-                @Override
-                public void run() {
-                    new HealthClubAccountApp(con);
-                }
-            });
-        } catch (Exception e) {
+            // Establish the connection
+            try {
+                Connection con = DriverManager.getConnection(url, username, password);
+                SwingUtilities.invokeLater(() -> new HealthClubAccountApp());
+                con.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
 
