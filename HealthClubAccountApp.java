@@ -175,7 +175,7 @@ public class HealthClubAccountApp extends JFrame {
         }
         int newID;
         while(true){
-            newID = random.nextInt(7);
+            newID = random.nextInt();
             System.out.println("Trying id value of " + newID);
             boolean unique = true;
             for(int id: memberIDs){
@@ -215,9 +215,9 @@ public class HealthClubAccountApp extends JFrame {
         String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
         String username = "nczap";
         String password = "group2healthclub";
-        try {
-            Class.forName("software.aws.rds.jdbc.mysql.Driver");
-            Connection con = DriverManager.getConnection(url, username, password);
+        try (
+                Connection con = DriverManager.getConnection(url, username, password);
+                ) {
 
             SwingUtilities.invokeLater(new Runnable() {
                 @Override
@@ -225,7 +225,6 @@ public class HealthClubAccountApp extends JFrame {
                     new HealthClubAccountApp(con);
                 }
             });
-
         } catch (Exception e) {
             e.printStackTrace();
         }
