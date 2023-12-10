@@ -8,7 +8,7 @@ public class CheckIn {
 
     public static void main(String[] args){
         try {
-            System.out.println(isAccountValid(2));
+            System.out.println(isAccountValid(5));
         } catch (SQLException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -16,7 +16,6 @@ public class CheckIn {
 
     public static boolean isAccountValid(int id) throws SQLException, ClassNotFoundException {
         String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
-        String localhost = "jdbc:mysql://localhost:3306/sysenghealthclub";
         String username = "nczap";
         String password = "group2healthclub";
 
@@ -42,6 +41,23 @@ public class CheckIn {
 
         System.out.println(currentDate);
 
-        return (expirationDate.isBefore(currentDate));
+        boolean isValid = !(currentDate.isBefore(expirationDate));
+
+        if(isValid){
+            String updateLastVisit = "UPDATE hcmember " +
+                    "SET last_visit = ? " +
+                    "WHERE member_id = ?;";
+
+            PreparedStatement preparedStatement = con.prepareStatement(updateLastVisit);
+
+            preparedStatement.setDate(1,Date.valueOf(currentDate));
+            preparedStatement.setInt(2,id);
+
+            int rowsUpdated = preparedStatement.executeUpdate();
+
+            System.out.println(rowsUpdated);
+        }
+
+        return isValid;
     }
 }
