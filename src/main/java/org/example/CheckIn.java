@@ -31,7 +31,11 @@ public class CheckIn {
 
         ResultSet expiration = statement.executeQuery(getMemberExpiration);
 
-        expiration.next();
+        if(!expiration.next()){
+            System.out.println("Member Does Not Exist!");
+            return false;
+        }
+
         Date expirationDateInitial = expiration.getDate("expiration_date");
         LocalDate expirationDate = expirationDateInitial.toLocalDate();
 
@@ -57,7 +61,6 @@ public class CheckIn {
 
             System.out.println(rowsUpdated);
         }
-
         return isValid;
     }
 }
