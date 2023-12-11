@@ -7,59 +7,61 @@ import java.time.LocalDate;
 public class CheckIn {
 
     public static void main(String[] args){
-        try {
-            System.out.println(isAccountValid(5));
-        } catch (SQLException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        System.out.println(isAccountValid(2));
     }
 
-    public static boolean isAccountValid(int id) throws SQLException, ClassNotFoundException {
+    public static boolean isAccountValid(int id)  {
         String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
         String username = "nczap";
         String password = "group2healthclub";
 
-        Class.forName("software.aws.rds.jdbc.mysql.Driver");
+        boolean isValid = false;
 
-        Connection con = DriverManager.getConnection(url, username, password);
+        try {
+            Class.forName("software.aws.rds.jdbc.mysql.Driver");
 
-        String getMemberExpiration = "SELECT expiration_date " +
-                "FROM hcmember " +
-                "WHERE member_id = " + id;
+            Connection con = DriverManager.getConnection(url, username, password);
 
-        Statement statement = con.createStatement();
+            String getMemberExpiration = "SELECT expiration_date " +
+                    "FROM hcmember " +
+                    "WHERE member_id = " + id;
 
-        ResultSet expiration = statement.executeQuery(getMemberExpiration);
+            Statement statement = con.createStatement();
 
-        if(!expiration.next()){
-            System.out.println("Member Does Not Exist!");
-            return false;
-        }
+            ResultSet expiration = statement.executeQuery(getMemberExpiration);
 
-        Date expirationDateInitial = expiration.getDate("expiration_date");
-        LocalDate expirationDate = expirationDateInitial.toLocalDate();
+            if (!expiration.next()) {
+                System.out.println("Member Does Not Exist!");
+                return false;
+            }
 
-        System.out.println(expirationDate);
+            Date expirationDateInitial = expiration.getDate("expiration_date");
+            LocalDate expirationDate = expirationDateInitial.toLocalDate();
 
-        LocalDate currentDate = LocalDate.now();
+            System.out.println(expirationDate);
 
-        System.out.println(currentDate);
+            LocalDate currentDate = LocalDate.now();
 
-        boolean isValid = !(currentDate.isBefore(expirationDate));
+            System.out.println(currentDate);
 
-        if(isValid){
-            String updateLastVisit = "UPDATE hcmember " +
-                    "SET last_visit = ? " +
-                    "WHERE member_id = ?;";
+            isValid = !(expirationDate.isBefore(currentDate));
 
-            PreparedStatement preparedStatement = con.prepareStatement(updateLastVisit);
+            if (isValid) {
+                String updateLastVisit = "UPDATE hcmember " +
+                        "SET last_visit = ? " +
+                        "WHERE member_id = ?;";
 
-            preparedStatement.setDate(1,Date.valueOf(currentDate));
-            preparedStatement.setInt(2,id);
+                PreparedStatement preparedStatement = con.prepareStatement(updateLastVisit);
 
-            int rowsUpdated = preparedStatement.executeUpdate();
+                preparedStatement.setDate(1, Date.valueOf(currentDate));
+                preparedStatement.setInt(2, id);
 
-            System.out.println(rowsUpdated);
+                int rowsUpdated = preparedStatement.executeUpdate();
+
+                System.out.println(rowsUpdated);
+            }
+        } catch (SQLException | ClassNotFoundException e){
+            e.printStackTrace();
         }
         return isValid;
     }
