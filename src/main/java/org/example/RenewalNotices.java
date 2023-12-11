@@ -24,20 +24,20 @@ public class RenewalNotices {
 
     public static void generateRenewalReport(Connection con) throws SQLException {
 
-        LocalDate currentDate = LocalDate.now();
-        currentDate = currentDate.minusMonths(1);
+        LocalDate tomorrow = LocalDate.now();
+        tomorrow = tomorrow.plusDays(1);
 
-        String inactiveMemberQuery = "SELECT firstname, lastname, phonenum, email, address, city, state, last_visit " +
+        String inactiveMemberQuery = "SELECT firstname, lastname, phonenum, email, address, city, state, expiration_date " +
                 "FROM hcmember " +
-                "WHERE last_visit < ?";
+                "WHERE expiration_date = ?";
 
         PreparedStatement statement = con.prepareStatement(inactiveMemberQuery);
 
-        statement.setDate(1, Date.valueOf(currentDate));
+        statement.setDate(1, Date.valueOf(tomorrow));
 
         ResultSet rs = statement.executeQuery();
 
-        String outputPath = "InactiveMembers.txt";
+        String outputPath = "ExpiringMembers.txt";
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(outputPath))) {
 
@@ -50,7 +50,7 @@ public class RenewalNotices {
                 String address = rs.getString("address");
                 String city = rs.getString("city");
                 String state = rs.getString("state");
-                String last_visit = rs.getString("last_visit");
+                String expiration_date = rs.getString("expiration_date");
 
                 // Write the data to the file
                 writer.println("First Name:" + firstname + "\n" +
@@ -60,10 +60,10 @@ public class RenewalNotices {
                         "Address: " + address + "\n" +
                         "City: " + city + "\n" +
                         "State: " + state + "\n" +
-                        "Last Visit: " + last_visit + "\n");
+                        "Expiration Date: " + expiration_date + "\n");
             }
 
-            System.out.println("Results successfully written to " + outputPath + ".txt");
+            System.out.println("Results successfully written to " + outputPath);
         } catch (SQLException | IOException e) {
             e.printStackTrace();
         }
