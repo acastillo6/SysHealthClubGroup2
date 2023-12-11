@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.time.LocalDate;
+import javax.swing.*;
+import java.awt.*;
 
 public class RenewalNotices {
 
@@ -39,33 +41,81 @@ public class RenewalNotices {
 
         String outputPath = "ExpiringMembers.txt";
 
-        try (PrintWriter writer = new PrintWriter(new FileWriter(outputPath))) {
+        SwingUtilities.invokeLater(() -> {
+            JFrame renewalReportFrame = new JFrame("Renewal Report");
+            renewalReportFrame.setSize(800, 600);
+            renewalReportFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+            renewalReportFrame.setLocationRelativeTo(null);
 
-            // Iterate through the result set and write each row to the file
-            while (rs.next()) {
-                String firstname = rs.getString("firstname");
-                String lastname = rs.getString("lastname");
-                String phonenum = rs.getString("phonenum");
-                String email = rs.getString("email");
-                String address = rs.getString("address");
-                String city = rs.getString("city");
-                String state = rs.getString("state");
-                String expiration_date = rs.getString("expiration_date");
+            JTextArea textArea = new JTextArea();
+            textArea.setEditable(false);
 
-                // Write the data to the file
-                writer.println("First Name:" + firstname + "\n" +
-                        "Last Name: " + lastname + "\n" +
-                        "Phone Number: " + phonenum + "\n" +
-                        "Email: " + email + "\n" +
-                        "Address: " + address + "\n" +
-                        "City: " + city + "\n" +
-                        "State: " + state + "\n" +
-                        "Expiration Date: " + expiration_date + "\n");
+            try {
+                String reportContent = buildReportContent(rs);
+                textArea.setText(reportContent);
+
+                try (PrintWriter writer = new PrintWriter(new FileWriter(outputPath))) {
+                    writeToFile(rs, writer);
+                    System.out.println("Results successfully written to " + outputPath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
 
-            System.out.println("Results successfully written to " + outputPath);
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
+            JScrollPane scrollPane = new JScrollPane(textArea);
+
+            renewalReportFrame.add(scrollPane);
+            renewalReportFrame.setVisible(true);
+        });
+    }
+
+    private static String buildReportContent(ResultSet rs) throws SQLException {
+        StringBuilder reportContent = new StringBuilder();
+        while (rs.next()) {
+            String firstname = rs.getString("firstname");
+            String lastname = rs.getString("lastname");
+            String phonenum = rs.getString("phonenum");
+            String email = rs.getString("email");
+            String address = rs.getString("address");
+            String city = rs.getString("city");
+            String state = rs.getString("state");
+            String expiration_date = rs.getString("expiration_date");
+
+            reportContent.append("First Name:").append(firstname).append("\n")
+                    .append("Last Name: ").append(lastname).append("\n")
+                    .append("Phone Number: ").append(phonenum).append("\n")
+                    .append("Email: ").append(email).append("\n")
+                    .append("Address: ").append(address).append("\n")
+                    .append("City: ").append(city).append("\n")
+                    .append("State: ").append(state).append("\n")
+                    .append("Expiration Date: ").append(expiration_date).append("\n\n");
+        }
+
+        return reportContent.toString();
+    }
+
+    private static void writeToFile(ResultSet rs, PrintWriter writer) throws SQLException {
+        while (rs.next()) {
+            String firstname = rs.getString("firstname");
+            String lastname = rs.getString("lastname");
+            String phonenum = rs.getString("phonenum");
+            String email = rs.getString("email");
+            String address = rs.getString("address");
+            String city = rs.getString("city");
+            String state = rs.getString("state");
+            String expiration_date = rs.getString("expiration_date");
+
+            writer.println("First Name:" + firstname + "\n" +
+                    "Last Name: " + lastname + "\n" +
+                    "Phone Number: " + phonenum + "\n" +
+                    "Email: " + email + "\n" +
+                    "Address: " + address + "\n" +
+                    "City: " + city + "\n" +
+                    "State: " + state + "\n" +
+                    "Expiration Date: " + expiration_date + "\n");
         }
     }
 }
