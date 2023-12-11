@@ -38,6 +38,8 @@ public class HealthClubAccountApp extends JFrame {
 
 
 
+
+
     public HealthClubAccountApp() {
         setTitle("Health Club Account Creation");
         setSize(600, 400);
@@ -86,7 +88,7 @@ public class HealthClubAccountApp extends JFrame {
         membershipTypePanel.add(membershipTypeCheckBox1);
         membershipTypePanel.add(membershipTypeCheckBox2);
         membershipTypePanel.add(membershipTypeCheckBox3);
-        membershipTypePanel.setPreferredSize(new Dimension(600, 50));  // Adjust the width and height as needed
+        membershipTypePanel.setPreferredSize(new Dimension(600, 50));
         addFieldToPanel(mainPanel, "Membership Type:", membershipTypePanel);
 
 
@@ -114,22 +116,16 @@ public class HealthClubAccountApp extends JFrame {
             buttonsPanel.add(createAccountButton);
             buttonsPanel.add(loginButton);
 
-            mainPanel.add(new JPanel());// Empty panel to maintain the grid layout
+            mainPanel.add(new JPanel());
             mainPanel.add(membershipTypePanel);
             mainPanel.add(new JPanel());
 
 
             mainPanel.add(buttonsPanel);
 
-            //mainPanel.add(createAccountButton);
-            //mainPanel.add(new JPanel());
-            //mainPanel.add(loginButton);
 
             add(mainPanel);
 
-            //setSize(700, 700); // Set a fixed size for better control of the layout
-            //setLocationRelativeTo(null);
-            //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             setVisible(true);
 
 
@@ -157,17 +153,185 @@ public class HealthClubAccountApp extends JFrame {
         JButton loginSubmitButton = new JButton("Login");
         loginSubmitButton.addActionListener(e -> {
             try {
-                checkLogIn(con);
+                if (checkLogIn(con)) {
+                    createWelcomeWindow(Integer.parseInt(loginUsernameField.getText()), con);
+                    loginFrame.dispose();
+                } else {
+                    System.out.println("Incorrect login credentials. Please try again.");
+                }
             } catch (SQLException ex) {
                 throw new RuntimeException(ex);
             }
-            loginFrame.dispose();
         });
 
-        loginFrame.add(loginPanel);
-        loginFrame.add(loginSubmitButton, BorderLayout.SOUTH);
+        JButton backButton = new JButton("Back to Account Creation");
+        backButton.addActionListener(e -> {
+            loginFrame.dispose();
+            new HealthClubAccountApp();
+        });
+
+
+
+
+        loginFrame.add(loginPanel, BorderLayout.CENTER);
+        loginFrame.add(loginSubmitButton, BorderLayout.EAST);  // Moved the "Login" button to the right
+        loginFrame.add(backButton, BorderLayout.SOUTH);
 
         loginFrame.setVisible(true);
+    }
+
+    private void createWelcomeWindow(int userId, Connection con) {
+        // con = null; // Remove this line
+
+        JFrame welcomeFrame = new JFrame("Welcome");
+        welcomeFrame.setSize(300, 150);
+        welcomeFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        welcomeFrame.setLocationRelativeTo(null);
+
+        JPanel welcomePanel = new JPanel();
+        welcomePanel.setLayout(new GridLayout(3, 1, 10, 10));
+
+        // Assuming you have a method to get the user's first name based on their ID
+        String firstName = getFirstNameById(userId, con);
+
+        JLabel welcomeLabel = new JLabel("Welcome, " + firstName + "!");
+        welcomePanel.add(welcomeLabel);
+
+        JButton checkInButton = new JButton("Check In");
+        checkInButton.addActionListener(e -> {
+            // Add logic for the "Check In" button
+            if (checkIn(userId)) {
+                System.out.println("Check In successful");
+            } else {
+                System.out.println("Check In failed");
+            }
+
+        });
+        welcomePanel.add(checkInButton);
+
+        if (isMembershipExpired(userId)) {
+            JButton renewMembershipButton = new JButton("Renew Membership");
+            renewMembershipButton.addActionListener(e -> {
+
+                System.out.println("Renew Membership button clicked");
+            });
+            welcomePanel.add(renewMembershipButton);
+        }
+
+        JButton logoutButton = new JButton("Logout");
+        logoutButton.addActionListener(e -> {
+            welcomeFrame.dispose();
+            showLoginFrame(con);
+        });
+        welcomePanel.add(logoutButton);
+
+        welcomeFrame.add(welcomePanel);
+        welcomeFrame.setVisible(true);
+    }
+    public boolean checkIn(int userId) {
+        if (isMembershipExpired(userId)) {
+            System.out.println("Cannot check in. Membership is expired.");
+            return false;
+        }
+
+        String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
+        String username = "nczap";
+        String password = "group2healthclub";
+
+        try (Connection con = DriverManager.getConnection(url, username, password)) {
+            String updateLastVisit = "UPDATE hcmember " +
+                    "SET last_visit = ? " +
+                    "WHERE member_id = ?;";
+
+            java.util.Date currentDate = new java.util.Date();
+            java.sql.Date sqlDate = new java.sql.Date(currentDate.getTime());
+
+            try (PreparedStatement preparedStatement = con.prepareStatement(updateLastVisit)) {
+                preparedStatement.setDate(1, sqlDate);
+                preparedStatement.setInt(2, userId);
+
+                int rowsUpdated = preparedStatement.executeUpdate();
+
+                if (rowsUpdated > 0) {
+                    System.out.println("Check-in successful!");
+                    return true;
+                } else {
+                    System.out.println("Check-in failed. Please try again.");
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+
+    private void handleLogout(Connection con) {
+        try {
+            if (con != null && !con.isClosed()) {
+                con.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+
+
+
+
+    private static boolean isMembershipExpired(int userId) {
+        String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
+        String username = "nczap";
+        String password = "group2healthclub";
+
+        try (Connection con = DriverManager.getConnection(url, username, password)) {
+            String getMemberExpiration = "SELECT expiration_date " +
+                    "FROM hcmember " +
+                    "WHERE member_id = ?";
+
+            try (PreparedStatement preparedStatement = con.prepareStatement(getMemberExpiration)) {
+                preparedStatement.setInt(1, userId);
+
+                try (ResultSet expiration = preparedStatement.executeQuery()) {
+                    if (!expiration.next()) {
+                        System.out.println("Member Does Not Exist!");
+                        return false;
+                    }
+
+                    LocalDate expirationDate = expiration.getDate("expiration_date").toLocalDate();
+                    LocalDate currentDate = LocalDate.now();
+
+                    return currentDate.isAfter(expirationDate);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private String getFirstNameById(int userId, Connection con) {
+        String firstName = "";
+
+        try {
+            String getFirstNameQuery = "SELECT firstname FROM hcmember WHERE member_id = ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(getFirstNameQuery)) {
+                preparedStatement.setInt(1, userId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        firstName = resultSet.getString("firstname");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return firstName;
     }
 
     private void addFieldToPanel(JPanel panel, String label, JComponent component) {
@@ -266,7 +430,7 @@ public class HealthClubAccountApp extends JFrame {
         }
     }
 
-    private boolean checkLogIn(Connection con) throws SQLException{
+    private boolean checkLogIn(Connection con) throws SQLException {
         int idInput = Integer.parseInt((loginUsernameField.getText()));
         String passwordInput = new String(loginPasswordField.getPassword());
 
@@ -274,25 +438,25 @@ public class HealthClubAccountApp extends JFrame {
                 "FROM hcmember " +
                 "WHERE member_id = " + idInput;
 
-        Statement statement = con.createStatement();
+        try (Statement statement = con.createStatement();
+             ResultSet rs = statement.executeQuery(getIDPasswordQuery)) {
 
-        ResultSet rs = statement.executeQuery(getIDPasswordQuery);
+            if (!rs.next()) {
+                System.out.println("ID does not exist.");
+                return false;
+            }
 
-        if(!rs.next()) {
-            System.out.println("ID does not exist.");
+            String passwordStored = rs.getString("password").trim();
+
+            if (passwordInput.equals(passwordStored)) {
+                System.out.println("Login Successful!");
+                return true;
+            }
+
+            System.out.println("Incorrect Password.");
             return false;
         }
-
-        String passwordStored = rs.getString("password").trim();
-
-        if(passwordInput.equals(passwordStored)){
-            System.out.println("Login Succesful!");
-            return true;
-        }
-        System.out.println("Incorrect Password.");
-        return false;
     }
-
 
     public static int getUniqueId(Connection con){
         Random random = new Random();
