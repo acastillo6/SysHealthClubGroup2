@@ -209,7 +209,12 @@ public class HealthClubAccountApp extends JFrame {
         JButton checkInButton = new JButton("Check In");
         checkInButton.addActionListener(e -> {
             // Add logic for the "Check In" button
-            System.out.println("Check In button clicked");
+            if (checkIn(userId)) {
+                System.out.println("Check In successful");
+            } else {
+                System.out.println("Check In failed");
+            }
+
         });
         welcomePanel.add(checkInButton);
 
@@ -234,6 +239,44 @@ public class HealthClubAccountApp extends JFrame {
         welcomeFrame.add(welcomePanel);
         welcomeFrame.setVisible(true);
     }
+    public boolean checkIn(int userId) {
+        if (isMembershipExpired(userId)) {
+            System.out.println("Cannot check in. Membership is expired.");
+            return false;
+        }
+
+        String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
+        String username = "nczap";
+        String password = "group2healthclub";
+
+        try (Connection con = DriverManager.getConnection(url, username, password)) {
+            String updateLastVisit = "UPDATE hcmember " +
+                    "SET last_visit = ? " +
+                    "WHERE member_id = ?;";
+
+            java.util.Date currentDate = new java.util.Date();
+            java.sql.Date sqlDate = new java.sql.Date(currentDate.getTime());
+
+            try (PreparedStatement preparedStatement = con.prepareStatement(updateLastVisit)) {
+                preparedStatement.setDate(1, sqlDate);
+                preparedStatement.setInt(2, userId);
+
+                int rowsUpdated = preparedStatement.executeUpdate();
+
+                if (rowsUpdated > 0) {
+                    System.out.println("Check-in successful!");
+                    return true;
+                } else {
+                    System.out.println("Check-in failed. Please try again.");
+                    return false;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     private void handleLogout(Connection con) {
         try {
@@ -250,7 +293,7 @@ public class HealthClubAccountApp extends JFrame {
 
 
 
-    private boolean isMembershipExpired(int userId) {
+    private static boolean isMembershipExpired(int userId) {
         String url = "jdbc:mysql:aws://sysenghealthclub.cmrd2f4vkt0f.us-east-2.rds.amazonaws.com:3306/sysenghealthclub";
         String username = "nczap";
         String password = "group2healthclub";
