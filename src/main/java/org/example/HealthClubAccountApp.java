@@ -88,7 +88,7 @@ public class HealthClubAccountApp extends JFrame {
         membershipTypePanel.add(membershipTypeCheckBox1);
         membershipTypePanel.add(membershipTypeCheckBox2);
         membershipTypePanel.add(membershipTypeCheckBox3);
-        membershipTypePanel.setPreferredSize(new Dimension(600, 50));  // Adjust the width and height as needed
+        membershipTypePanel.setPreferredSize(new Dimension(600, 50));
         addFieldToPanel(mainPanel, "Membership Type:", membershipTypePanel);
 
 
@@ -116,22 +116,16 @@ public class HealthClubAccountApp extends JFrame {
             buttonsPanel.add(createAccountButton);
             buttonsPanel.add(loginButton);
 
-            mainPanel.add(new JPanel());// Empty panel to maintain the grid layout
+            mainPanel.add(new JPanel());
             mainPanel.add(membershipTypePanel);
             mainPanel.add(new JPanel());
 
 
             mainPanel.add(buttonsPanel);
 
-            //mainPanel.add(createAccountButton);
-            //mainPanel.add(new JPanel());
-            //mainPanel.add(loginButton);
 
             add(mainPanel);
 
-            //setSize(700, 700); // Set a fixed size for better control of the layout
-            //setLocationRelativeTo(null);
-            //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             setVisible(true);
 
 
@@ -163,7 +157,6 @@ public class HealthClubAccountApp extends JFrame {
                     createWelcomeWindow(Integer.parseInt(loginUsernameField.getText()), con);
                     loginFrame.dispose();
                 } else {
-                    // Add logic to handle incorrect login (e.g., display an error message)
                     System.out.println("Incorrect login credentials. Please try again.");
                 }
             } catch (SQLException ex) {
@@ -174,8 +167,6 @@ public class HealthClubAccountApp extends JFrame {
         JButton backButton = new JButton("Back to Account Creation");
         backButton.addActionListener(e -> {
             loginFrame.dispose();
-            // Add logic to navigate back to the account creation screen
-            // For example, you can create a new instance of HealthClubAccountApp
             new HealthClubAccountApp();
         });
 
@@ -221,7 +212,7 @@ public class HealthClubAccountApp extends JFrame {
         if (isMembershipExpired(userId)) {
             JButton renewMembershipButton = new JButton("Renew Membership");
             renewMembershipButton.addActionListener(e -> {
-                // Add logic for the "Renew Membership" button
+
                 System.out.println("Renew Membership button clicked");
             });
             welcomePanel.add(renewMembershipButton);
@@ -229,9 +220,7 @@ public class HealthClubAccountApp extends JFrame {
 
         JButton logoutButton = new JButton("Logout");
         logoutButton.addActionListener(e -> {
-            // Add logic for logging out and going back to the login screen
-            welcomeFrame.dispose(); // Close the current welcome frame
-           // handleLogout(con); // Pass con as a parameter
+            welcomeFrame.dispose();
             showLoginFrame(con);
         });
         welcomePanel.add(logoutButton);
@@ -286,7 +275,7 @@ public class HealthClubAccountApp extends JFrame {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        // Other logout logic
+
     }
 
 
@@ -320,7 +309,7 @@ public class HealthClubAccountApp extends JFrame {
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false; // Handle the exception appropriately in your application
+            return false;
         }
     }
 
