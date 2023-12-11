@@ -15,6 +15,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.time.ZoneId;
+
 
 
 public class HealthClubAccountApp extends JFrame {
@@ -181,8 +183,6 @@ public class HealthClubAccountApp extends JFrame {
     }
 
     private void createWelcomeWindow(int userId, Connection con) {
-        // con = null; // Remove this line
-
         JFrame welcomeFrame = new JFrame("Welcome");
         welcomeFrame.setSize(300, 150);
         welcomeFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -191,7 +191,6 @@ public class HealthClubAccountApp extends JFrame {
         JPanel welcomePanel = new JPanel();
         welcomePanel.setLayout(new GridLayout(3, 1, 10, 10));
 
-        // Assuming you have a method to get the user's first name based on their ID
         String firstName = getFirstNameById(userId, con);
 
         JLabel welcomeLabel = new JLabel("Welcome, " + firstName + "!");
@@ -212,8 +211,8 @@ public class HealthClubAccountApp extends JFrame {
         if (isMembershipExpired(userId)) {
             JButton renewMembershipButton = new JButton("Renew Membership");
             renewMembershipButton.addActionListener(e -> {
-
-                System.out.println("Renew Membership button clicked");
+                showRenewMembershipWindow(userId, con);
+                welcomeFrame.dispose();
             });
             welcomePanel.add(renewMembershipButton);
         }
@@ -228,6 +227,91 @@ public class HealthClubAccountApp extends JFrame {
         welcomeFrame.add(welcomePanel);
         welcomeFrame.setVisible(true);
     }
+    private void showRenewMembershipWindow(int userId, Connection con) {
+        JFrame renewMembershipFrame = new JFrame("Renew Membership");
+        renewMembershipFrame.setSize(300, 150);
+        renewMembershipFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        renewMembershipFrame.setLocationRelativeTo(null);
+
+        JPanel renewMembershipPanel = new JPanel();
+        renewMembershipPanel.setLayout(new GridLayout(2, 1, 10, 10));
+
+        JComboBox<String> membershipTypeComboBox = new JComboBox<>(new String[]{"3 Month", "6 Month", "1 Year"});
+        JButton renewButton = new JButton("Renew");
+        renewButton.addActionListener(event -> {
+            String selectedMembershipType = (String) membershipTypeComboBox.getSelectedItem();
+            renewMembership(userId, selectedMembershipType, con);
+            renewMembershipFrame.dispose();
+            createWelcomeWindow(userId, con); // Update the welcome window after renewal
+        });
+
+        renewMembershipPanel.add(membershipTypeComboBox);
+        renewMembershipPanel.add(renewButton);
+
+        renewMembershipFrame.add(renewMembershipPanel);
+        renewMembershipFrame.setVisible(true);
+    }
+
+    private void renewMembership(int userId, String membershipType, Connection con) {
+        try {
+            String updateExpirationDate = "UPDATE hcmember " +
+                    "SET expiration_date = ?" +
+                    "WHERE member_id = ?";
+
+            PreparedStatement statement = con.prepareStatement(updateExpirationDate);
+
+            LocalDate currentExpiration = getCurrentExpirationDate(userId, con);
+
+            LocalDate newExpiration;
+            switch (membershipType) {
+                case "3 Month":
+                    newExpiration = currentExpiration.plusMonths(3);
+                    break;
+                case "6 Month":
+                    newExpiration = currentExpiration.plusMonths(6);
+                    break;
+                case "1 Year":
+                    newExpiration = currentExpiration.plusYears(1);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid membership type");
+            }
+
+            java.sql.Date sqlNewExpiration = java.sql.Date.valueOf(newExpiration);
+
+            statement.setDate(1, sqlNewExpiration);
+            statement.setInt(2, userId);
+
+            int rowsAffected = statement.executeUpdate();
+            System.out.println("Rows Affected: " + rowsAffected);
+
+            System.out.println("Your " + membershipType + " membership has been renewed!");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    private LocalDate getCurrentExpirationDate(int userId, Connection con) throws SQLException {
+        String getMemberExpiration = "SELECT expiration_date " +
+                "FROM hcmember " +
+                "WHERE member_id = ?";
+
+        try (PreparedStatement preparedStatement = con.prepareStatement(getMemberExpiration)) {
+            preparedStatement.setInt(1, userId);
+
+            try (ResultSet expiration = preparedStatement.executeQuery()) {
+                if (!expiration.next()) {
+                    throw new SQLException("Member Does Not Exist!");
+                }
+
+                Date expirationDate = new Date(expiration.getDate("expiration_date").getTime());
+                return expirationDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
+        }
+    }
+
     public boolean checkIn(int userId) {
         if (isMembershipExpired(userId)) {
             System.out.println("Cannot check in. Membership is expired.");
