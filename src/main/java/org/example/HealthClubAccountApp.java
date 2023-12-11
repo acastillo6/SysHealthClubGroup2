@@ -201,7 +201,7 @@ public class HealthClubAccountApp extends JFrame {
         welcomePanel.setLayout(new GridLayout(3, 1, 10, 10));
 
         // Assuming you have a method to get the user's first name based on their ID
-        String firstName = getFirstNameById(userId);
+        String firstName = getFirstNameById(userId, con);
 
         JLabel welcomeLabel = new JLabel("Welcome, " + firstName + "!");
         welcomePanel.add(welcomeLabel);
@@ -324,9 +324,25 @@ public class HealthClubAccountApp extends JFrame {
         }
     }
 
-    private static String getFirstNameById(int userId) {
-        //update logic to get first name of logged in user
-        return "John";
+    private String getFirstNameById(int userId, Connection con) {
+        String firstName = "";
+
+        try {
+            String getFirstNameQuery = "SELECT firstname FROM hcmember WHERE member_id = ?";
+            try (PreparedStatement preparedStatement = con.prepareStatement(getFirstNameQuery)) {
+                preparedStatement.setInt(1, userId);
+
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    if (resultSet.next()) {
+                        firstName = resultSet.getString("firstname");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return firstName;
     }
 
     private void addFieldToPanel(JPanel panel, String label, JComponent component) {
